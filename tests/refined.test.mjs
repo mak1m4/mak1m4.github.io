@@ -10,7 +10,7 @@ test('Original renderers preserve the baseline apart from the approved ripple co
  const approvedTilt = '      push();\n      translate(cx, cy);\n      scale(1, SQUASH); // 与向外扩散的粒子波纹共用倾斜平面。\n      drawCore(34, 0, 0);\n      pop();';
  const normalized = source.replace(/\r\n/g,'\n');
  assert.ok(normalized.includes(approvedTilt));
- assert.equal(createHash('sha256').update(normalized.replace(approvedTilt,'      drawCore(34, cx, cy);')).digest('hex'),fs.readFileSync('../design/shape-of-sound-original-polish/original-effects.sha256','utf8'));
+ assert.equal(createHash('sha256').update(normalized.replace(approvedTilt,'      drawCore(34, cx, cy);')).digest('hex'),fs.readFileSync('tests/original-effects.sha256','utf8'));
  assert.ok(html.includes('./refined-modes.js'));
  assert.ok(!html.includes('pearl-mode.js'));
  assert.ok(!html.includes('pearl-motion.js'));
