@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#05080d" />
+    <title>Gesture Terrain</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://storage.googleapis.com" />
+    <script type="module" crossorigin src="./assets/index-CI3ynC-V.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DIC-Sf7j.css">
+  </head>
+  <body>
+    <main class="experience">
+      <canvas id="terrain" aria-label="Real-time gesture terrain"></canvas>
+
+      <header class="topbar">
+        <div class="wordmark">
+          <span class="wordmark-mark" aria-hidden="true"></span>
+          <div>
+            <p class="eyebrow">WEEK 06 / EXHIBITION PROTOTYPE</p>
+            <h1>Gesture Terrain</h1>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="mode-toggle" role="group" aria-label="Terrain presentation mode">
+            <button id="concept-mode-button" class="mode-option active" type="button" aria-pressed="true">CONCEPT</button>
+            <button id="reality-mode-button" class="mode-option" type="button" aria-pressed="false">REALISM</button>
+          </div>
+          <button id="reset-terrain-button" class="button button-quiet" type="button" title="Reset accumulated landforms">Reset world</button>
+          <button id="camera-button" class="button" type="button">START CAMERA</button>
+          <button id="presentation-button" class="button button-quiet presentation-button" type="button" aria-pressed="false" title="Play the authored exhibition sequence">PRESENT</button>
+        </div>
+      </header>
+
+      <section class="signal-panel" aria-label="Live tracking status">
+        <div class="panel-heading">
+          <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+          <span id="tracking-status">WAITING FOR INPUT</span>
+        </div>
+        <dl class="readout-grid">
+          <div>
+            <dt>INPUT</dt>
+            <dd id="input-readout">NONE</dd>
+          </div>
+          <div>
+            <dt>PALM X</dt>
+            <dd id="x-readout">--</dd>
+          </div>
+          <div>
+            <dt>PALM Y</dt>
+            <dd id="y-readout">--</dd>
+          </div>
+          <div>
+            <dt>CONF.</dt>
+            <dd id="confidence-readout">--</dd>
+          </div>
+          <div>
+            <dt>GESTURE</dt>
+            <dd id="gesture-readout">IDLE</dd>
+          </div>
+          <div>
+            <dt>LANDFORMS</dt>
+            <dd id="imprint-readout">00</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="mapping-panel" aria-label="Gesture-to-terrain mapping">
+        <p class="eyebrow">GESTURE MAPPING</p>
+        <div class="mapping-row">
+          <span class="mapping-key">01</span>
+          <span>OPEN PALM</span>
+          <span>SEDIMENT / GROWTH</span>
+        </div>
+        <div class="mapping-row muted">
+          <span class="mapping-key">02</span>
+          <span>FIST</span>
+          <span>EROSION BASIN</span>
+        </div>
+        <div class="mapping-row muted">
+          <span class="mapping-key">03</span>
+          <span>PINCH</span>
+          <span>FAULT / MINERAL VEIN</span>
+        </div>
+        <div class="mapping-row muted">
+          <span class="mapping-key">04</span>
+          <span>V SIGN</span>
+          <span>DIRECTED FLOW LINE</span>
+        </div>
+      </section>
+
+      <aside class="camera-frame" aria-label="Camera preview">
+        <video id="webcam" autoplay muted playsinline></video>
+        <canvas id="landmarks" aria-hidden="true"></canvas>
+        <div class="camera-label">HAND LANDMARKS / 21 POINTS</div>
+      </aside>
+
+      <section class="study-panel tool-panel" aria-label="Gesture recognition study controls">
+        <div class="study-heading">
+          <div>
+            <p class="eyebrow">INTERACTION STUDY</p>
+            <p id="study-status" class="study-status">READY / CAMERA REQUIRED</p>
+          </div>
+          <span id="recording-dot" class="recording-dot" aria-hidden="true"></span>
+        </div>
+        <div class="study-fields">
+          <label>
+            <span>PARTICIPANT</span>
+            <input id="participant-input" maxlength="8" value="P01" aria-label="Anonymous participant code" />
+          </label>
+          <label>
+            <span>TARGET</span>
+            <select id="expected-gesture" aria-label="Expected gesture">
+              <option value="OPEN PALM">OPEN PALM</option>
+              <option value="FIST">FIST</option>
+              <option value="PINCH">PINCH</option>
+              <option value="V SIGN">V SIGN</option>
+            </select>
+          </label>
+          <label>
+            <span>DISTANCE</span>
+            <select id="distance-select" aria-label="Camera distance">
+              <option value="near">NEAR</option>
+              <option value="mid" selected>MID</option>
+              <option value="far">FAR</option>
+            </select>
+          </label>
+          <label>
+            <span>LIGHT</span>
+            <select id="lighting-select" aria-label="Lighting condition">
+              <option value="bright">BRIGHT</option>
+              <option value="normal" selected>NORMAL</option>
+              <option value="dim">DIM</option>
+            </select>
+          </label>
+        </div>
+        <div class="study-actions">
+          <button id="record-button" class="button" type="button" disabled>RECORD TRIAL</button>
+          <button id="export-json-button" class="icon-button" type="button" title="Export JSON dataset" aria-label="Export JSON dataset">JSON</button>
+          <button id="export-csv-button" class="icon-button" type="button" title="Export CSV dataset" aria-label="Export CSV dataset">CSV</button>
+          <button id="clear-study-button" class="icon-button danger" type="button" title="Clear local study data" aria-label="Clear local study data">CLEAR</button>
+        </div>
+        <div class="study-metrics">
+          <span>SAMPLES <strong id="sample-count">0000</strong></span>
+          <span>TRIALS <strong id="trial-count">00</strong></span>
+          <span>ACCURACY <strong id="accuracy-readout">--</strong></span>
+          <span>LATENCY <strong id="latency-readout">--</strong></span>
+        </div>
+        <p id="study-report" class="study-report">Record four 5-second trials per condition. Video stays on this device.</p>
+      </section>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <p class="footer-note">TOUCH BECOMES TRACE / TRACE BECOMES TERRAIN</p>
+    </main>
+  </body>
+</html>

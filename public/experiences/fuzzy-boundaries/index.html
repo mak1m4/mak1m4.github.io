@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuzzy Boundaries · Interactive Algorithmic Image</title>
+<style>
+  /* ── 设计令牌:暗房仪器 × 宋体文人气 ─────────────────────────── */
+  :root{
+    --bg:#131417;          /* 展厅暗色 */
+    --panel:#1B1D22;
+    --line:#2A2D33;
+    --ink:#EDE8DC;         /* 暖纸白 */
+    --mut:#96917F;
+    --brass:#C7B37A;       /* 仪器黄铜 */
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+    --serif:"Songti SC","STSong","Noto Serif SC","SimSun",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","MiSans","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer}
+  :focus-visible{outline:1.5px solid var(--brass);outline-offset:2px;border-radius:4px}
+
+  /* ── 页头 ── */
+  header{
+    display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+    padding:20px 26px 14px;border-bottom:1px solid var(--line);
+  }
+  .title h1{
+    font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:.14em;
+  }
+  .title .sub{
+    font-family:var(--mono);font-size:10.5px;color:var(--mut);
+    letter-spacing:.22em;text-transform:uppercase;margin-top:4px;
+  }
+  .about-btn{
+    background:none;border:1px solid var(--line);color:var(--mut);
+    font-size:12px;padding:6px 14px;border-radius:99px;letter-spacing:.08em;
+    transition:color .2s,border-color .2s;white-space:nowrap;
+  }
+  .about-btn:hover{color:var(--brass);border-color:var(--brass)}
+
+  /* ── 主布局 ── */
+  main{
+    display:grid;grid-template-columns:1fr 304px;gap:22px;
+    padding:22px 26px 30px;max-width:1280px;margin:0 auto;
+  }
+  @media (max-width:920px){ main{grid-template-columns:1fr} }
+
+  /* ── 画布区 ── */
+  .stage{min-width:0}
+  .canvas-wrap{
+    background:#0D0E10;border:1px solid var(--line);border-radius:8px;
+    padding:10px;display:flex;justify-content:center;
+  }
+  #cv{
+    max-width:100%;height:auto;display:block;border-radius:3px;
+    cursor:crosshair;image-rendering:auto;
+  }
+
+  /* 签名元素:隶属度读取条 —— 触摸像素,读到它的归属分布 */
+  .member-bar{
+    margin-top:12px;border:1px solid var(--line);border-radius:6px;
+    background:var(--panel);padding:9px 12px 10px;
+  }
+  .member-bar .row{display:flex;align-items:center;gap:10px}
+  .member-bar .label{
+    font-family:var(--mono);font-size:10px;color:var(--mut);
+    letter-spacing:.14em;white-space:nowrap;min-width:112px;
+  }
+  .member-strip{
+    flex:1;display:flex;height:22px;border-radius:4px;overflow:hidden;
+    border:1px solid #000;
+  }
+  .member-strip .seg{
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:9.5px;color:rgba(0,0,0,.72);
+    min-width:0;overflow:hidden;transition:flex-grow .12s linear;
+    white-space:nowrap;
+  }
+  .member-bar .h-read{
+    font-family:var(--mono);font-size:11px;color:var(--brass);
+    min-width:84px;text-align:right;
+  }
+  .member-bar .hint{
+    font-size:11px;color:var(--mut);margin-top:7px;letter-spacing:.02em;
+  }
+
+  .hud{
+    font-family:var(--mono);font-size:10.5px;color:var(--mut);
+    letter-spacing:.06em;margin-top:9px;display:flex;justify-content:space-between;
+    flex-wrap:wrap;gap:6px;
+  }
+  .hud .st-ok{color:var(--brass)}
+
+  /* ── 侧栏:仪器面板 ── */
+  aside{display:flex;flex-direction:column;gap:18px}
+  .sec .eyebrow{
+    font-family:var(--mono);font-size:10px;color:var(--mut);
+    letter-spacing:.2em;margin-bottom:9px;text-transform:uppercase;
+  }
+  .btn-row{display:flex;flex-wrap:wrap;gap:7px}
+  .btn{
+    background:transparent;border:1px solid var(--line);color:var(--ink);
+    font-size:12.5px;padding:7px 11px;border-radius:6px;
+    transition:border-color .18s,color .18s,background .18s;
+  }
+  .btn:hover{border-color:var(--brass)}
+  .btn.active{border-color:var(--brass);color:var(--brass)}
+  .btn.primary{border-color:var(--brass);color:var(--brass)}
+  .btn.primary:hover{background:rgba(199,179,122,.1)}
+  .btn:disabled{opacity:.45;cursor:default}
+
+  .param{margin-bottom:13px}
+  .param .p-head{
+    display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;
+  }
+  .param .p-name{font-size:12.5px;color:var(--ink)}
+  .param .p-name i{font-family:var(--mono);font-style:normal;color:var(--brass)}
+  .param .p-val{font-family:var(--mono);font-size:11.5px;color:var(--brass)}
+  .param input[type=range]{
+    width:100%;accent-color:var(--brass);height:20px;background:transparent;
+  }
+  .param .p-note{font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.45}
+
+  .stepper{display:flex;align-items:center;gap:10px}
+  .stepper button{
+    width:26px;height:26px;border:1px solid var(--line);background:none;
+    color:var(--ink);border-radius:6px;font-size:14px;line-height:1;
+  }
+  .stepper button:hover{border-color:var(--brass);color:var(--brass)}
+  .stepper .c-val{font-family:var(--mono);font-size:14px;color:var(--brass);min-width:20px;text-align:center}
+
+  /* 类簇色板 */
+  .swatches{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .chip .sq{width:26px;height:26px;border-radius:5px;border:1px solid rgba(0,0,0,.5)}
+  .chip .pct{font-family:var(--mono);font-size:9.5px;color:var(--mut)}
+
+  /* 收敛曲线 */
+  #spark{width:100%;height:40px;display:block;background:var(--panel);
+    border:1px solid var(--line);border-radius:6px}
+  .spark-cap{font-family:var(--mono);font-size:9.5px;color:var(--mut);
+    margin-top:4px;letter-spacing:.1em}
+
+  .toast{
+    font-family:var(--mono);font-size:10.5px;color:var(--brass);
+    min-height:16px;opacity:0;transition:opacity .3s;
+  }
+  .toast.show{opacity:1}
+
+  .credit{
+    font-family:var(--mono);font-size:9.5px;color:#5c594f;line-height:1.7;
+    border-top:1px solid var(--line);padding-top:12px;letter-spacing:.03em;
+  }
+
+  /* ── 关于弹层 ── */
+  .modal{
+    position:fixed;inset:0;background:rgba(10,10,12,.82);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50;
+    backdrop-filter:blur(3px);
+  }
+  .modal.open{display:flex}
+  .modal .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    max-width:600px;width:100%;max-height:86vh;overflow:auto;padding:30px 32px;
+  }
+  .modal h2{font-family:var(--serif);font-size:20px;letter-spacing:.12em;margin-bottom:4px}
+  .modal .en{font-family:var(--mono);font-size:10px;color:var(--mut);
+    letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
+  .modal p{font-size:13.5px;color:var(--ink);margin-bottom:12px;line-height:1.85}
+  .modal .formula{
+    font-family:var(--mono);font-size:11.5px;color:var(--brass);
+    background:#15161a;border:1px solid var(--line);border-radius:6px;
+    padding:14px 16px;line-height:2;margin:14px 0;overflow-x:auto;white-space:pre;
+  }
+  .modal .close{
+    margin-top:8px;background:none;border:1px solid var(--line);color:var(--mut);
+    padding:7px 18px;border-radius:99px;font-size:12px;
+  }
+  .modal .close:hover{border-color:var(--brass);color:var(--brass)}
+  .modal .fine{font-size:11px;color:var(--mut)}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">
+    <h1>Fuzzy Boundaries</h1>
+    <div class="sub">Fuzzy Boundaries — Kernel Fuzzy C-Means as a way of seeing</div>
+  </div>
+  <button class="about-btn" id="aboutBtn">About this work</button>
+</header>
+
+<main>
+  <!-- ═══ 作品画布 ═══ -->
+  <section class="stage">
+    <div class="canvas-wrap"><canvas id="cv" width="560" height="420"></canvas></div>
+
+    <!-- 签名交互:隶属度读取条 -->
+    <div class="member-bar">
+      <div class="row">
+        <span class="label" id="mbLabel">Average membership</span>
+        <div class="member-strip" id="mbStrip"></div>
+        <span class="h-read" id="mbH">H —</span>
+      </div>
+      <div class="hint">Hover over any point to read its membership u<sub>ik</sub> across every colour cluster and its fuzzy entropy H. No pixel belongs to just one cluster.</div>
+    </div>
+
+    <div class="hud">
+      <span id="hudLeft">KFCM · RBF · Ready</span>
+      <span id="hudRight"></span>
+    </div>
+  </section>
+
+  <!-- ═══ 仪器面板 ═══ -->
+  <aside>
+    <div class="sec">
+      <div class="eyebrow">Image Source</div>
+      <div class="btn-row">
+        <button class="btn src-btn active" data-preset="mist">Mist</button>
+        <button class="btn src-btn" data-preset="garden">Garden</button>
+        <button class="btn src-btn" data-preset="window">Window</button>
+        <button class="btn" id="uploadBtn">Upload image</button>
+        <button class="btn" id="camBtn">Camera</button>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="eyebrow">Viewing Mode</div>
+      <div class="btn-row">
+        <button class="btn mode-btn active" data-mode="soft">Soft Blend</button>
+        <button class="btn mode-btn" data-mode="hard">Hard Partition</button>
+        <button class="btn mode-btn" data-mode="entropy">Entropy</button>
+      </div>
+      <div class="param"><div class="p-note" id="modeNote">Each pixel is coloured by its simultaneous memberships across all clusters—the world when the algorithm accepts ambiguity.</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="eyebrow">Parameters</div>
+
+      <div class="param">
+        <div class="p-head">
+          <span class="p-name">Clusters <i>c</i></span>
+        </div>
+        <div class="stepper">
+          <button id="cMinus" aria-label="Decrease cluster count">−</button>
+          <span class="c-val" id="cVal">5</span>
+          <button id="cPlus" aria-label="Increase cluster count">+</button>
+          <span class="p-note" style="margin:0 0 0 6px">How many categories the world is asked to become</span>
+        </div>
+      </div>
+
+      <div class="param">
+        <div class="p-head">
+          <span class="p-name">Fuzziness <i>m</i></span>
+          <span class="p-val" id="mVal">2.00</span>
+        </div>
+        <input type="range" id="mSlider" min="1.05" max="4" step="0.05" value="2"
+               aria-label="Fuzziness m">
+        <div class="p-note">As m approaches 1, the world becomes either/or. Higher values dissolve its boundaries. Drag for a live preview; cluster centres stay fixed.</div>
+      </div>
+
+      <div class="param">
+        <div class="p-head">
+          <span class="p-name">Kernel Width <i>σ</i></span>
+          <span class="p-val" id="sVal">0.25</span>
+        </div>
+        <input type="range" id="sSlider" min="0.06" max="0.8" step="0.01" value="0.25"
+               aria-label="RBF kernel width sigma">
+        <div class="p-note">The reach of similarity in kernel space. Release to re-run clustering.</div>
+      </div>
+
+      <div class="btn-row" style="margin-top:4px">
+        <button class="btn primary" id="rerunBtn">Recluster</button>
+        <button class="btn" id="exportBtn">Export PNG</button>
+      </div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="sec">
+      <div class="eyebrow">Clusters — Machine Summaries</div>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="sec">
+      <div class="eyebrow">Objective J — Convergence</div>
+      <canvas id="spark" width="272" height="40"></canvas>
+      <div class="spark-cap" id="sparkCap">J = Σᵢ Σₖ uᵢₖᵐ · D(xᵢ, vₖ)</div>
+    </div>
+
+    <div class="credit">
+      Based on the author's undergraduate thesis on KFCM customer clustering.<br>
+      This work removes its final argmax.<br>
+      Kernel Fuzzy C-Means (RBF) · HTML5 Canvas
+    </div>
+  </aside>
+</main>
+
+<!-- ═══ 关于 ═══ -->
+<div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-label="About Fuzzy Boundaries">
+  <div class="panel">
+    <h2>Fuzzy Boundaries</h2>
+    <div class="en">Fuzzy Boundaries · Interactive image, variable dimensions</div>
+    <p>I first used Kernel Fuzzy C-Means (KFCM) to segment customer behaviour. What the algorithm actually produces is a membership matrix: every person belongs to every category by a value between 0 and 1. Yet the system's final step is always argmax—it selects the largest value, fixes the person to one label, and discards every other possibility.</p>
+    <p>Fuzzy Boundaries removes that final step and turns the same algorithm towards images. A pixel is no longer judged as belonging to one colour. It is rendered through its simultaneous memberships across every colour cluster. The fuzziness value m becomes a viewer-controlled lens: as m approaches 1, the world hardens into either/or regions; as m increases, boundaries dissolve and ambiguous territories reappear.</p>
+    <p class="fine">Hover over the image to read a pixel's membership distribution and entropy—the information classification usually erases.</p>
+    <div class="formula">K(x,v)  = exp( −‖x−v‖² / 2σ² )          RBF kernel
+D(x,v)  = 2 ( 1 − K(x,v) )              kernel-induced distance
+u_ik    = 1 / Σⱼ ( D_ik / D_ij )^(1/(m−1))   membership
+v_k     = Σᵢ u_ikᵐ K(xᵢ,vₖ) xᵢ / Σᵢ u_ikᵐ K(xᵢ,vₖ)
+H_i     = −Σₖ u_ik ln u_ik              fuzzy entropy</div>
+    <button class="close" id="aboutClose">Back to the work</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   《暧昧的边界》 Fuzzy Boundaries
+   —— Kernel Fuzzy C-Means 的图像化移植
+   算法与作者毕业设计 clustering_algorithms.py :: KFCMClusterer 一致:
+     · RBF 核  K(x,v) = exp(−‖x−v‖²/2σ²)
+     · 核距离  D = K(x,x) − 2K(x,v) + K(v,v) = 2(1−K)   (RBF 下)
+     · 隶属度  u_ik = 1 / Σ_j (D_ik/D_ij)^(1/(m−1))
+              (实现采用等价式 u_ik = t_k/Σt, t_k = D_ik^(−1/(m−1)))
+     · 中心    v_k = Σ u^m·K·x / Σ u^m·K   (核加权均值)
+     · 模糊熵  H = −Σ u ln u   (对应 get_membership_entropy)
+   与原实现的差异:在 K-Means++ 初始化后先计算隶属度再更新中心
+   (迭代次序微调,更新公式不变);拟合在像素抽样上进行以保证交互帧率。
+   ===================================================================== */
+
+/* ── 状态 ─────────────────────────────────────────────────────────── */
+const S = {
+  w:0, h:0,
+  data:null,            // Float32Array (w*h*3), RGB ∈ [0,1] —— 工作分辨率
+  srcCanvas:null,       // 高清源(用于导出)
+  centers:null,         // Float32Array (c*3)
+  c:5, m:2.0, sigma:0.25,
+  mode:'soft',
+  Jhist:[], iter:0, converged:false,
+  runId:0,              // 运行令牌:参数变更时使旧循环失效
+  uAvg:null, hAvg:0,    // 全图平均隶属 / 平均熵(渲染时累计)
+  shares:null,          // 各簇硬划分占比(样本上)
+};
+const WORK_MAX = 560;        // 交互工作分辨率(长边)
+const SRC_MAX  = 1400;       // 源保留分辨率
+const EXPORT_MAX = 1280;     // 导出分辨率(长边)
+const SAMPLE_N = 2600;       // 拟合抽样像素数
+const MAX_ITER = 60;
+const TOL = 1.5e-4;          // 平均 |ΔU| 收敛阈值
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d', {willReadFrequently:true});
+
+/* ── 工具 ─────────────────────────────────────────────────────────── */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const fmt=(x,d=2)=>x.toFixed(d);
+const fmtE=x=>x>=1000?x.toExponential(2):x.toFixed(2);
+function toast(msg,ms=2600){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),ms)}
+function rgb255(r,g,b){return `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`}
+
+/* ── 示例影像(程序化生成,离线可用)────────────────────────────── */
+const PRESETS = {
+  mist(g,w,h,rng){                                   // 晨雾:黎明的五个色相领地,交界处彼此渗透
+    const sky=g.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,'#2c3d63');                   // 靛
+    sky.addColorStop(.42,'#8fa3b8');                 // 灰蓝
+    sky.addColorStop(.62,'#e0b98a');                 // 暖光带
+    sky.addColorStop(.8,'#5f8d84');                  // 青
+    sky.addColorStop(1,'#31554f');
+    g.fillStyle=sky; g.fillRect(0,0,w,h);
+    const blob=(x,y,r,col,a0)=>{
+      const gr=g.createRadialGradient(x,y,0,x,y,r);
+      gr.addColorStop(0,col+a0); gr.addColorStop(1,col+'00');
+      g.fillStyle=gr; g.fillRect(0,0,w,h);
+    };
+    blob(w*.68,h*.52,w*.34,'#f2cd8e','cc');          // 暖核(日)
+    blob(w*.22,h*.46,w*.40,'#c6889a','b3');          // 玫瑰雾
+    blob(w*.46,h*1.04,w*.56,'#3f7d74','d9');         // 近处青潭
+    blob(w*.14,-h*.08,w*.52,'#26355f','cc');         // 顶部靛深处
+    blob(w*.92,h*.16,w*.30,'#7d94b6','99');          // 右上灰蓝
+  },
+  garden(g,w,h,rng){                                 // 花园:暗底上的团簇色斑
+    const base=g.createLinearGradient(0,0,w,h);
+    base.addColorStop(0,'#17241b'); base.addColorStop(1,'#2c3a26');
+    g.fillStyle=base; g.fillRect(0,0,w,h);
+    const flora=['#c2497b','#e08a4e','#e8d268','#93b6e0','#7a5ba6','#e6e2d2','#5e9e6f'];
+    for(let i=0;i<18;i++){
+      const x=rng()*w, y=rng()*h, r=(0.05+rng()*0.16)*Math.max(w,h);
+      const col=flora[(rng()*flora.length)|0];
+      const gr=g.createRadialGradient(x,y,0,x,y,r);
+      gr.addColorStop(0,col+'e6'); gr.addColorStop(.55,col+'88'); gr.addColorStop(1,col+'00');
+      g.fillStyle=gr; g.beginPath(); g.arc(x,y,r,0,7); g.fill();
+    }
+  },
+  window(g,w,h,rng){                                 // 窗:暮色天空前的半透明格窗
+    const sky=g.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,'#f0c69a'); sky.addColorStop(.5,'#c1909a'); sky.addColorStop(1,'#5d6d94');
+    g.fillStyle=sky; g.fillRect(0,0,w,h);
+    const pane=['#a4553d','#26333f','#d8c08a','#8ba08b','#6d5566','#3f5666'];
+    const cols=5, rows=4, mx=w*.05, my=h*.06;
+    const cw=(w-2*mx)/cols, ch=(h-2*my)/rows;
+    for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){
+      if(rng()<0.22) continue;                       // 留出天空的空格
+      const col=pane[(rng()*pane.length)|0];
+      const pad=Math.min(cw,ch)*(0.06+rng()*0.08);
+      const x=mx+i*cw+pad, y=my+j*ch+pad, ww=cw-2*pad, hh=ch-2*pad;
+      const gr=g.createLinearGradient(x,y,x,y+hh);
+      gr.addColorStop(0,col+'d9'); gr.addColorStop(1,col+'8c');
+      g.fillStyle=gr; g.fillRect(x,y,ww,hh);
+    }
+  }
+};
+const PRESET_SEED = {mist:11, garden:47, window:83};
+
+function loadPreset(name){
+  const c=document.createElement('canvas');
+  c.width=1280; c.height=960;
+  PRESETS[name](c.getContext('2d'),1280,960,mulberry32(PRESET_SEED[name]));
+  setSource(c);
+}
+
+/* ── 源影像装载:高清源 → 工作分辨率浮点数据 ───────────────────── */
+function setSource(srcCanvas){
+  S.srcCanvas=srcCanvas;
+  const k=Math.min(1, WORK_MAX/Math.max(srcCanvas.width,srcCanvas.height));
+  const w=Math.max(2,Math.round(srcCanvas.width*k));
+  const h=Math.max(2,Math.round(srcCanvas.height*k));
+  cv.width=w; cv.height=h; S.w=w; S.h=h;
+  ctx.filter='blur(0.4px)';                          // 压掉渐变抖色噪点(不支持则自动忽略)
+  ctx.drawImage(srcCanvas,0,0,w,h);
+  ctx.filter='none';
+  const px=ctx.getImageData(0,0,w,h).data;
+  const n=w*h, data=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    data[i*3]=px[i*4]/255; data[i*3+1]=px[i*4+1]/255; data[i*3+2]=px[i*4+2]/255;
+  }
+  S.data=data;
+  runKFCM();
+}
+
+/* ── KFCM 核心(与 KFCMClusterer 的更新公式一致)──────────────────── */
+function samplePixels(n){
+  const total=S.w*S.h, take=Math.min(SAMPLE_N,total);
+  const X=new Float32Array(take*3), rng=mulberry32(1234);
+  for(let i=0;i<take;i++){
+    const p=(rng()*total)|0;
+    X[i*3]=S.data[p*3]; X[i*3+1]=S.data[p*3+1]; X[i*3+2]=S.data[p*3+2];
+  }
+  return X;
+}
+
+function kmeansInit(X,c){                    // K-Means++ 播种 + 数轮 Lloyd
+  const n=X.length/3, rng=mulberry32(42);    // random_state=42,呼应原实现
+  const cen=new Float32Array(c*3), d2=new Float32Array(n).fill(Infinity);
+  let idx=(rng()*n)|0;
+  cen.set(X.subarray(idx*3,idx*3+3),0);
+  for(let k=1;k<c;k++){
+    let sum=0;
+    for(let i=0;i<n;i++){
+      const dx=X[i*3]-cen[(k-1)*3],dy=X[i*3+1]-cen[(k-1)*3+1],dz=X[i*3+2]-cen[(k-1)*3+2];
+      const dd=dx*dx+dy*dy+dz*dz;
+      if(dd<d2[i])d2[i]=dd; sum+=d2[i];
+    }
+    let r=rng()*sum,i=0;
+    for(;i<n-1;i++){r-=d2[i];if(r<=0)break}
+    cen.set(X.subarray(i*3,i*3+3),k*3);
+  }
+  const asg=new Int32Array(n),sums=new Float32Array(c*3),cnt=new Int32Array(c);
+  for(let it=0;it<6;it++){
+    sums.fill(0);cnt.fill(0);
+    for(let i=0;i<n;i++){
+      let best=0,bd=Infinity;
+      for(let k=0;k<c;k++){
+        const dx=X[i*3]-cen[k*3],dy=X[i*3+1]-cen[k*3+1],dz=X[i*3+2]-cen[k*3+2];
+        const dd=dx*dx+dy*dy+dz*dz;
+        if(dd<bd){bd=dd;best=k}
+      }
+      asg[i]=best;cnt[best]++;
+      sums[best*3]+=X[i*3];sums[best*3+1]+=X[i*3+1];sums[best*3+2]+=X[i*3+2];
+    }
+    for(let k=0;k<c;k++)if(cnt[k]>0){
+      cen[k*3]=sums[k*3]/cnt[k];cen[k*3+1]=sums[k*3+1]/cnt[k];cen[k*3+2]=sums[k*3+2]/cnt[k];
+    }
+  }
+  return cen;
+}
+
+/* 单次 KFCM 迭代:D → U → 中心;返回 {U, J, delta} */
+function kfcmIterate(X,cen,c,m,sigma,Uprev){
+  const n=X.length/3, inv=1/(2*sigma*sigma), pw=1/(m-1);
+  const D=new Float32Array(n*c), K=new Float32Array(n*c), U=new Float32Array(n*c);
+  for(let i=0;i<n;i++){
+    let tSum=0; const base=i*c;
+    for(let k=0;k<c;k++){
+      const dx=X[i*3]-cen[k*3],dy=X[i*3+1]-cen[k*3+1],dz=X[i*3+2]-cen[k*3+2];
+      const kv=Math.exp(-(dx*dx+dy*dy+dz*dz)*inv);
+      K[base+k]=kv;
+      const d=Math.max(2*(1-kv),1e-10);          // 数值安全,同原实现
+      D[base+k]=d;
+      const t=Math.pow(d,-pw);                    // u_ik = t_k / Σt (等价式)
+      U[base+k]=t; tSum+=t;
+    }
+    for(let k=0;k<c;k++)U[base+k]/=tSum;
+  }
+  const num=new Float32Array(c*3),den=new Float32Array(c);
+  let J=0;
+  for(let i=0;i<n;i++){
+    const base=i*c;
+    for(let k=0;k<c;k++){
+      const um=Math.pow(U[base+k],m), wgt=um*K[base+k];
+      den[k]+=wgt;
+      num[k*3]+=wgt*X[i*3];num[k*3+1]+=wgt*X[i*3+1];num[k*3+2]+=wgt*X[i*3+2];
+      J+=um*D[base+k];
+    }
+  }
+  for(let k=0;k<c;k++)if(den[k]>1e-10){
+    cen[k*3]=num[k*3]/den[k];cen[k*3+1]=num[k*3+1]/den[k];cen[k*3+2]=num[k*3+2]/den[k];
+  }
+  let delta=1;
+  if(Uprev){delta=0;for(let t=0;t<n*c;t++)delta+=Math.abs(U[t]-Uprev[t]);delta/=n*c}
+  return {U,J,delta};
+}
+
+/* ── 全图渲染核心:对每个像素计算隶属度并按模式着色 ─────────────── */
+function renderRows(out,data,w,y0,y1,cen,c,m,sigma,mode,acc){
+  const inv=1/(2*sigma*sigma), pw=1/(m-1), lnC=Math.log(c);
+  const t=new Float64Array(c);
+  for(let y=y0;y<y1;y++){
+    for(let x=0;x<w;x++){
+      const p=(y*w+x), b=p*3;
+      const r0=data[b],g0=data[b+1],b0=data[b+2];
+      let tSum=0;
+      for(let k=0;k<c;k++){
+        const dx=r0-cen[k*3],dy=g0-cen[k*3+1],dz=b0-cen[k*3+2];
+        const kv=Math.exp(-(dx*dx+dy*dy+dz*dz)*inv);
+        const d=Math.max(2*(1-kv),1e-10);
+        const tk=Math.pow(d,-pw);
+        t[k]=tk; tSum+=tk;
+      }
+      let r=0,g=0,bb=0,hEnt=0,best=0,bu=-1;
+      for(let k=0;k<c;k++){
+        const u=t[k]/tSum;
+        t[k]=u;
+        r+=u*cen[k*3]; g+=u*cen[k*3+1]; bb+=u*cen[k*3+2];
+        if(u>1e-12)hEnt-=u*Math.log(u);
+        if(u>bu){bu=u;best=k}
+        if(acc)acc.u[k]+=u;
+      }
+      hEnt/=lnC;
+      if(acc){acc.h+=hEnt;acc.n++}
+      let R,G,B;
+      if(mode==='soft'){R=r;G=g;B=bb}
+      else if(mode==='hard'){R=cen[best*3];G=cen[best*3+1];B=cen[best*3+2]}
+      else{const L=Math.pow(hEnt,1.35);R=r*L;G=g*L;B=bb*L}   // 熵:只有暧昧发光
+      const o=p*4;
+      out[o]=R*255;out[o+1]=G*255;out[o+2]=B*255;out[o+3]=255;
+    }
+  }
+}
+
+function renderFrame(){
+  const {w,h,data,centers,c,m,sigma,mode}=S;
+  if(!data||!centers)return;
+  const img=ctx.createImageData(w,h);
+  const acc={u:new Float64Array(c),h:0,n:0};
+  renderRows(img.data,data,w,0,h,centers,c,m,sigma,mode,acc);
+  ctx.putImageData(img,0,0);
+  S.uAvg=Array.from(acc.u,v=>v/acc.n);
+  S.hAvg=acc.h/acc.n;
+  if(!hoverActive)updateBar(S.uAvg,S.hAvg,'Average Membership');
+}
+
+/* ── 运行流程:采样拟合 → 逐迭代呈现(算法即表演)───────────────── */
+function runKFCM(){
+  const id=++S.runId;
+  S.Jhist=[];S.iter=0;S.converged=false;
+  const X=samplePixels();
+  S.centers=kmeansInit(X,S.c);
+  let Uprev=null;
+  setHud('Initialising K-Means++');
+
+  function step(){
+    if(id!==S.runId)return;                          // 已被新一轮运行取代
+    const {U,J,delta}=kfcmIterate(X,S.centers,S.c,S.m,S.sigma,Uprev);
+    Uprev=U; S.iter++; S.Jhist.push(J);
+    const done=(S.iter>=2&&delta<TOL)||S.iter>=MAX_ITER;
+    if(!reduceMotion||done){renderFrame();drawSpark()}
+    setHud(null,J,delta,done);
+    if(done){
+      S.converged=delta<TOL;
+      updateShares(X,U);
+      renderSwatches();
+      return;
+    }
+    if(reduceMotion)step();
+    else requestAnimationFrame(step);
+  }
+  if(reduceMotion)step(); else requestAnimationFrame(step);
+}
+
+function updateShares(X,U){
+  const n=X.length/3,c=S.c,cnt=new Int32Array(c);
+  for(let i=0;i<n;i++){
+    let best=0,bu=-1;
+    for(let k=0;k<c;k++)if(U[i*c+k]>bu){bu=U[i*c+k];best=k}
+    cnt[best]++;
+  }
+  S.shares=Array.from(cnt,v=>v/n);
+}
+
+/* ── HUD / 收敛曲线 / 色板 ────────────────────────────────────────── */
+function setHud(msg,J,delta,done){
+  const L=document.getElementById('hudLeft'),R=document.getElementById('hudRight');
+  if(msg){L.textContent='KFCM · RBF · '+msg;R.textContent='';return}
+  const st=done?(S.iter>=MAX_ITER&&!(delta<TOL)?'Maximum iterations reached':'✓ Converged'):'Running';
+  L.innerHTML=`KFCM · RBF · iter ${String(S.iter).padStart(3,'0')} · <span class="${done?'st-ok':''}">${st}</span>`;
+  R.textContent=`J ${fmtE(J)} · ΔU ${delta.toExponential(1)} · c${S.c} m${fmt(S.m)} σ${fmt(S.sigma)} · ${(S.w*S.h).toLocaleString()} px`;
+}
+
+function drawSpark(){
+  const sc=document.getElementById('spark'),g=sc.getContext('2d');
+  const W=sc.width,H=sc.height,hist=S.Jhist;
+  g.clearRect(0,0,W,H);
+  if(hist.length<2)return;
+  const mn=Math.min(...hist),mx=Math.max(...hist),rg=mx-mn||1;
+  g.strokeStyle='#C7B37A';g.lineWidth=1.4;g.beginPath();
+  hist.forEach((v,i)=>{
+    const x=6+(W-12)*i/(Math.max(hist.length-1,1));
+    const y=H-6-(H-12)*(1-(v-mn)/rg);
+    i?g.lineTo(x,y):g.moveTo(x,y);
+  });
+  g.stroke();
+}
+
+function renderSwatches(){
+  const box=document.getElementById('swatches');box.innerHTML='';
+  for(let k=0;k<S.c;k++){
+    const chip=document.createElement('div');chip.className='chip';
+    const sq=document.createElement('div');sq.className='sq';
+    sq.style.background=rgb255(S.centers[k*3],S.centers[k*3+1],S.centers[k*3+2]);
+    const pct=document.createElement('div');pct.className='pct';
+    pct.textContent=S.shares?Math.round(S.shares[k]*100)+'%':'—';
+    sq.title=`Cluster ${k+1} · Hard-partition share ${pct.textContent}`;
+    chip.append(sq,pct);box.appendChild(chip);
+  }
+}
+
+/* ── 签名交互:隶属度读取条 ───────────────────────────────────────── */
+let hoverActive=false;
+function buildStrip(){
+  const strip=document.getElementById('mbStrip');strip.innerHTML='';
+  for(let k=0;k<S.c;k++){
+    const seg=document.createElement('div');seg.className='seg';strip.appendChild(seg);
+  }
+}
+function updateBar(u,hEnt,label){
+  const strip=document.getElementById('mbStrip');
+  if(strip.children.length!==S.c)buildStrip();
+  for(let k=0;k<S.c;k++){
+    const seg=strip.children[k];
+    seg.style.flexGrow=Math.max(u[k],0.0001);
+    seg.style.background=rgb255(S.centers[k*3],S.centers[k*3+1],S.centers[k*3+2]);
+    seg.textContent=u[k]>=0.12?Math.round(u[k]*100)+'%':'';
+  }
+  document.getElementById('mbLabel').textContent=label;
+  document.getElementById('mbH').textContent='H '+fmt(hEnt,2);
+}
+function membershipAt(px,py){
+  const {data,w,centers,c,m,sigma}=S;
+  const b=(py*w+px)*3, inv=1/(2*sigma*sigma), pw=1/(m-1);
+  const u=new Array(c);let tSum=0;
+  for(let k=0;k<c;k++){
+    const dx=data[b]-centers[k*3],dy=data[b+1]-centers[k*3+1],dz=data[b+2]-centers[k*3+2];
+    const d=Math.max(2*(1-Math.exp(-(dx*dx+dy*dy+dz*dz)*inv)),1e-10);
+    const t=Math.pow(d,-pw);u[k]=t;tSum+=t;
+  }
+  let h=0;
+  for(let k=0;k<c;k++){u[k]/=tSum;if(u[k]>1e-12)h-=u[k]*Math.log(u[k])}
+  return {u,h:h/Math.log(c)};
+}
+cv.addEventListener('pointermove',e=>{
+  if(!S.centers)return;
+  const r=cv.getBoundingClientRect();
+  const px=Math.min(S.w-1,Math.max(0,Math.round((e.clientX-r.left)/r.width*S.w)));
+  const py=Math.min(S.h-1,Math.max(0,Math.round((e.clientY-r.top)/r.height*S.h)));
+  const {u,h}=membershipAt(px,py);
+  hoverActive=true;
+  updateBar(u,h,`Pixel (${px},${py})`);
+});
+cv.addEventListener('pointerleave',()=>{
+  hoverActive=false;
+  if(S.uAvg)updateBar(S.uAvg,S.hAvg,'Average Membership');
+});
+
+/* ── 控件绑定 ─────────────────────────────────────────────────────── */
+const modeNotes={
+  soft:'Each pixel is coloured by its simultaneous memberships across all clusters—the world when the algorithm accepts ambiguity.',
+  hard:'Argmax forces every pixel into a single cluster—the version classifiers deliver to the world.',
+  entropy:'Brightness equals fuzzy entropy H. Certainty sinks into darkness; only ambiguous borders glow.'
+};
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mode-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  S.mode=b.dataset.mode;
+  document.getElementById('modeNote').innerHTML=modeNotes[S.mode];
+  renderFrame();
+}));
+
+document.querySelectorAll('.src-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.src-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  loadPreset(b.dataset.preset);
+}));
+
+const mSlider=document.getElementById('mSlider');
+let mRAF=0;
+mSlider.addEventListener('input',()=>{
+  S.m=parseFloat(mSlider.value);
+  document.getElementById('mVal').textContent=fmt(S.m);
+  if(!mRAF)mRAF=requestAnimationFrame(()=>{mRAF=0;renderFrame()});   // 冻结中心,仅重算隶属
+});
+const sSlider=document.getElementById('sSlider');
+sSlider.addEventListener('input',()=>{
+  S.sigma=parseFloat(sSlider.value);
+  document.getElementById('sVal').textContent=fmt(S.sigma);
+});
+sSlider.addEventListener('change',()=>runKFCM());
+
+document.getElementById('cMinus').addEventListener('click',()=>setC(S.c-1));
+document.getElementById('cPlus').addEventListener('click',()=>setC(S.c+1));
+function setC(v){
+  S.c=Math.min(8,Math.max(2,v));
+  document.getElementById('cVal').textContent=S.c;
+  buildStrip();runKFCM();
+}
+document.getElementById('rerunBtn').addEventListener('click',()=>runKFCM());
+
+/* 上传 */
+document.getElementById('uploadBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();
+  img.onload=()=>{
+    const k=Math.min(1,SRC_MAX/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    document.querySelectorAll('.src-btn').forEach(x=>x.classList.remove('active'));
+    setSource(c);
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror=()=>toast('Cannot read image');
+  img.src=URL.createObjectURL(f);
+  e.target.value='';
+});
+
+/* 摄像头:单帧自画像 */
+document.getElementById('camBtn').addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){toast('Camera not available in this environment');return}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{width:1280},audio:false});
+    const video=document.createElement('video');
+    video.srcObject=stream;video.playsInline=true;
+    await video.play();
+    await new Promise(r=>setTimeout(r,450));         // 等待曝光稳定
+    const c=document.createElement('canvas');
+    c.width=video.videoWidth;c.height=video.videoHeight;
+    const g=c.getContext('2d');
+    g.translate(c.width,0);g.scale(-1,1);            // 镜像,如同照镜子
+    g.drawImage(video,0,0);
+    stream.getTracks().forEach(t=>t.stop());
+    document.querySelectorAll('.src-btn').forEach(x=>x.classList.remove('active'));
+    setSource(c);
+    toast('Frame captured—your fuzzy portrait');
+  }catch(err){toast('Camera access denied')}
+});
+
+/* 导出:以当前参数在高分辨率下重渲染 */
+document.getElementById('exportBtn').addEventListener('click',async()=>{
+  if(!S.srcCanvas||!S.centers)return;
+  const btn=document.getElementById('exportBtn');
+  btn.disabled=true;btn.textContent='Exporting…';
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    const src=S.srcCanvas;
+    const k=Math.min(1,EXPORT_MAX/Math.max(src.width,src.height));
+    const w=Math.round(src.width*k),h=Math.round(src.height*k);
+    const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
+    const tg=tmp.getContext('2d');
+    tg.filter='blur(0.4px)';tg.drawImage(src,0,0,w,h);tg.filter='none';
+    const px=tg.getImageData(0,0,w,h).data;
+    const data=new Float32Array(w*h*3);
+    for(let i=0;i<w*h;i++){data[i*3]=px[i*4]/255;data[i*3+1]=px[i*4+1]/255;data[i*3+2]=px[i*4+2]/255}
+    const img=tg.createImageData(w,h);
+    const CHUNK=Math.max(16,Math.round(120000/w));   // 分块渲染避免卡死
+    for(let y=0;y<h;y+=CHUNK){
+      renderRows(img.data,data,w,y,Math.min(h,y+CHUNK),S.centers,S.c,S.m,S.sigma,S.mode,null);
+      await new Promise(r=>setTimeout(r,0));
+    }
+    tg.putImageData(img,0,0);
+    const a=document.createElement('a');
+    a.download=`fuzzy-boundaries_${S.mode}_c${S.c}_m${fmt(S.m)}_s${fmt(S.sigma)}.png`;
+    a.href=tmp.toDataURL('image/png');
+    a.click();
+    toast(`Exported ${w}×${h} PNG`);
+  }catch(err){toast('Export failed: '+err.message)}
+  btn.disabled=false;btn.textContent='Export PNG';
+});
+
+/* 关于弹层 */
+const modal=document.getElementById('aboutModal');
+document.getElementById('aboutBtn').addEventListener('click',()=>modal.classList.add('open'));
+document.getElementById('aboutClose').addEventListener('click',()=>modal.classList.remove('open'));
+modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
+
+/* ── 启动 ─────────────────────────────────────────────────────────── */
+buildStrip();
+loadPreset('mist');
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Shape of Sound shared signal architecture</title>
+  <desc id="desc">A diagram showing a local audio file decoded in the browser, routed through Web Audio nodes, analysed into six shared features, and interpreted by five visual modules.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f2633a"/>
+    </marker>
+    <style>
+      .display{font-family:"Arial Narrow",Arial,sans-serif;font-weight:700;letter-spacing:-1px;fill:#171715}
+      .body{font-family:Arial,sans-serif;fill:#171715}
+      .mono{font-family:"Courier New",monospace;fill:#6c6962;letter-spacing:1.5px}
+      .small{font-size:15px}.label{font-size:17px;font-weight:700}.nodeTitle{font-size:22px;font-weight:700}.nodeBody{font-size:15px;fill:#6c6962}
+      .card{fill:#f7f4ed;stroke:#cbc6bc;stroke-width:1.5}.darkCard{fill:#171715;stroke:#171715;stroke-width:1.5}
+      .darkText{fill:#f7f4ed}.accent{fill:#f2633a}.flow{fill:none;stroke:#f2633a;stroke-width:2;marker-end:url(#arrow)}
+      .hairline{fill:none;stroke:#cbc6bc;stroke-width:1}.chip{fill:#eee9df;stroke:#cbc6bc;stroke-width:1}
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#f3f0e9"/>
+  <path d="M52 142H1548" class="hairline"/>
+  <text x="54" y="58" class="mono small">SHAPE OF SOUND · IMPLEMENTED SIGNAL PATH</text>
+  <text x="52" y="112" class="display" font-size="52">One signal, five visual readings.</text>
+  <text x="1548" y="62" text-anchor="end" class="mono small">WEB AUDIO API · LOCAL PROCESSING</text>
+
+  <text x="52" y="190" class="mono small">01 · SOURCE &amp; ROUTING</text>
+  <rect x="52" y="218" width="254" height="104" rx="2" class="card"/>
+  <text x="76" y="255" class="body nodeTitle">Local audio file</text>
+  <text x="76" y="284" class="body nodeBody">MP3 · WAV · OGG</text>
+  <text x="76" y="307" class="mono small">STAYS IN BROWSER</text>
+
+  <rect x="374" y="218" width="254" height="104" rx="2" class="card"/>
+  <text x="398" y="255" class="body nodeTitle">Decode</text>
+  <text x="398" y="284" class="body nodeBody">file.arrayBuffer()</text>
+  <text x="398" y="307" class="body nodeBody">decodeAudioData()</text>
+  <path d="M306 270H374" class="flow"/>
+
+  <rect x="52" y="374" width="254" height="104" rx="2" class="card"/>
+  <text x="76" y="411" class="body nodeTitle">AudioBufferSource</text>
+  <text x="76" y="440" class="body nodeBody">Playback · seek · pause</text>
+  <text x="76" y="463" class="body nodeBody">Decoded buffer in memory</text>
+  <path d="M501 322V350H179V374" class="flow"/>
+
+  <rect x="374" y="374" width="254" height="104" rx="2" class="card"/>
+  <text x="398" y="411" class="body nodeTitle">GainNode</text>
+  <text x="398" y="440" class="body nodeBody">Playback level</text>
+  <path d="M306 426H374" class="flow"/>
+
+  <rect x="374" y="530" width="254" height="104" rx="2" class="darkCard"/>
+  <text x="398" y="567" class="body nodeTitle darkText">AnalyserNode</text>
+  <text x="398" y="596" class="body nodeBody darkText">FFT size · 2048</text>
+  <text x="398" y="619" class="body nodeBody darkText">Smoothing · 0.82</text>
+  <path d="M501 478V530" class="flow"/>
+  <path d="M501 634V668H628" class="flow"/>
+  <text x="646" y="673" class="mono small">AUDIO OUTPUT</text>
+
+  <text x="688" y="190" class="mono small">02 · SHARED ANALYSIS</text>
+  <rect x="688" y="218" width="356" height="416" rx="2" class="darkCard"/>
+  <text x="716" y="260" class="body nodeTitle darkText">Feature extraction</text>
+  <text x="716" y="288" class="body nodeBody darkText">Frequency + time-domain arrays per frame</text>
+  <path d="M628 582H660V426H688" class="flow"/>
+
+  <rect x="716" y="322" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="732" y="349" class="body label darkText">RMS level</text>
+  <text x="732" y="372" class="body nodeBody darkText">time domain</text>
+  <rect x="876" y="322" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="892" y="349" class="body label darkText">Bass</text>
+  <text x="892" y="372" class="body nodeBody darkText">20–250 Hz</text>
+
+  <rect x="716" y="404" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="732" y="431" class="body label darkText">Mid</text>
+  <text x="732" y="454" class="body nodeBody darkText">250–2,000 Hz</text>
+  <rect x="876" y="404" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="892" y="431" class="body label darkText">Treble</text>
+  <text x="892" y="454" class="body nodeBody darkText">2,000–12,000 Hz</text>
+
+  <rect x="716" y="486" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="732" y="513" class="body label darkText">Centroid</text>
+  <text x="732" y="536" class="body nodeBody darkText">spectral brightness</text>
+  <rect x="876" y="486" width="140" height="66" rx="2" fill="#292925" stroke="#4c4a44"/>
+  <text x="892" y="513" class="body label darkText">Beat event</text>
+  <text x="892" y="536" class="body nodeBody darkText">adaptive bass rise</text>
+
+  <path d="M716 577H1016" stroke="#4c4a44"/>
+  <text x="716" y="605" class="mono small darkText">FEATURE-SPECIFIC SMOOTHING</text>
+
+  <text x="1100" y="190" class="mono small">03 · VISUAL INTERPRETATION</text>
+  <path d="M1044 426H1082" class="flow"/>
+  <circle cx="1084" cy="426" r="5" class="accent"/>
+  <path d="M1084 270V582" stroke="#f2633a" stroke-width="2"/>
+
+  <g>
+    <rect x="1118" y="218" width="430" height="74" rx="2" class="card"/>
+    <circle cx="1142" cy="255" r="7" class="accent"/><text x="1164" y="251" class="body label">Particle Ripple</text><text x="1164" y="274" class="body nodeBody">level + bass → travelling surface waves</text>
+    <path d="M1084 255H1118" class="flow"/>
+    <rect x="1118" y="306" width="430" height="74" rx="2" class="card"/>
+    <circle cx="1142" cy="343" r="7" class="accent"/><text x="1164" y="339" class="body label">Spectral Bloom</text><text x="1164" y="362" class="body nodeBody">spectrum + beat → radial lengths and shards</text>
+    <path d="M1084 343H1118" class="flow"/>
+    <rect x="1118" y="394" width="430" height="74" rx="2" class="card"/>
+    <circle cx="1142" cy="431" r="7" class="accent"/><text x="1164" y="427" class="body label">Nebula Flow</text><text x="1164" y="450" class="body nodeBody">bands + centroid → flow, colour and detail</text>
+    <path d="M1084 431H1118" class="flow"/>
+    <rect x="1118" y="482" width="430" height="74" rx="2" class="card"/>
+    <circle cx="1142" cy="519" r="7" class="accent"/><text x="1164" y="515" class="body label">Paint Splash</text><text x="1164" y="538" class="body nodeBody">beat strength → persistent painterly events</text>
+    <path d="M1084 519H1118" class="flow"/>
+    <rect x="1118" y="570" width="430" height="74" rx="2" class="card"/>
+    <circle cx="1142" cy="607" r="7" class="accent"/><text x="1164" y="603" class="body label">Corridor</text><text x="1164" y="626" class="body nodeBody">spectrum + bands → depth and atmosphere</text>
+    <path d="M1084 607H1118" class="flow"/>
+  </g>
+
+  <rect x="52" y="704" width="1496" height="112" rx="2" fill="#ebe6dc" stroke="#cbc6bc"/>
+  <text x="76" y="740" class="mono small">VIEWER CONTROLS</text>
+  <g class="body small">
+    <rect x="76" y="760" width="132" height="34" rx="17" class="chip"/><text x="142" y="782" text-anchor="middle">Reactivity</text>
+    <rect x="220" y="760" width="106" height="34" rx="17" class="chip"/><text x="273" y="782" text-anchor="middle">Trail</text>
+    <rect x="338" y="760" width="166" height="34" rx="17" class="chip"/><text x="421" y="782" text-anchor="middle">Beat sensitivity</text>
+    <rect x="516" y="760" width="130" height="34" rx="17" class="chip"/><text x="581" y="782" text-anchor="middle">Saturation</text>
+    <rect x="658" y="760" width="130" height="34" rx="17" class="chip"/><text x="723" y="782" text-anchor="middle">Brightness</text>
+    <rect x="800" y="760" width="102" height="34" rx="17" class="chip"/><text x="851" y="782" text-anchor="middle">Speed</text>
+  </g>
+  <text x="1522" y="746" text-anchor="end" class="body label">Controls change interpretation, not the audio.</text>
+  <text x="1522" y="778" text-anchor="end" class="body nodeBody">No upload · no server processing · one shared analysed signal</text>
+  <text x="52" y="864" class="mono small">SOURCE OF TRUTH · CURRENT BROWSER IMPLEMENTATION</text>
+  <text x="1548" y="864" text-anchor="end" class="mono small">HUANG ZIJIA · 2026</text>
+</svg>

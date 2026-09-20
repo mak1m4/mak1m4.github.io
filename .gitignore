@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.finesse/
+artifacts/
+audit-*/
+*.log
+.env
+.env.*
+!.env.example
